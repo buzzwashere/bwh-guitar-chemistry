@@ -1,0 +1,14 @@
+Install these libraries:
+- Bootstrap css framework compatible with VueJs
+- VueRouter
+- Pinia
+
+Layout:
+1. application layout is: top nav-bar, center content section, footer bar
+2. code for the top nav-bar and footer bar will live in App.vue
+3. code for center content section will be in new component Content.vue, which will replace HelloWorld.vue.
+4. top nav-bar has a height of 50px
+5. content section is broken into:
+   - left area that will contain a list of these musical keys: E, G, A, D, with titles formatted as '<key> Major'
+   - right area will contain chord symbol (graphic preferred, but text is acceptable) of the key clicked in the left list
+6. footer bar has a greyish background and has centered text "Copyright <current year>, buzz.was.here"
