@@ -41,6 +41,12 @@ body {
   background: color-mix(in srgb, var(--surface-alt) 82%, #f8efe0 18%);
 }
 
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 .brand-mark {
   font-size: 0.9rem;
   letter-spacing: 0.16rem;
