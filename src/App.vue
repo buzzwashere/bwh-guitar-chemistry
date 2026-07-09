@@ -12,7 +12,7 @@ const currentYear = new Date().getFullYear()
     </nav>
   </header>
 
-  <main class="app-main container-fluid px-3 px-md-4 py-4 py-md-5">
+  <main class="app-main container-fluid px-3 px-md-4 pt-2 pt-md-3 pb-4 pb-md-5">
     <RouterView />
   </main>
 

@@ -1,56 +1,58 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
-type KeyName = 'E' | 'G' | 'A' | 'D'
+type KeyName = 'C' | 'C#' | 'D' | 'D#' | 'E' | 'F' | 'F#' | 'G' | 'G#' | 'A' | 'A#' | 'B'
+type ModeName =
+  | 'Ionian'
+  | 'Dorian'
+  | 'Phrygian'
+  | 'Lydian'
+  | 'Mixolydian'
+  | 'Aeolian'
+  | 'Locrian'
+  | 'Natural minor'
+  | 'Harmonic minor'
+  | 'Melodic minor'
+  | 'Altered scale'
 
-type ChordData = {
-  symbol: string
-  subtitle: string
-  notes: string
-  diagram: string[]
-}
-
-const CHORDS: Record<KeyName, ChordData> = {
-  E: {
-    symbol: 'E',
-    subtitle: 'E Major',
-    notes: 'E - G# - B',
-    diagram: ['e|--0--|', 'B|--0--|', 'G|--1--|', 'D|--2--|', 'A|--2--|', 'E|--0--|']
-  },
-  G: {
-    symbol: 'G',
-    subtitle: 'G Major',
-    notes: 'G - B - D',
-    diagram: ['e|--3--|', 'B|--0--|', 'G|--0--|', 'D|--0--|', 'A|--2--|', 'E|--3--|']
-  },
-  A: {
-    symbol: 'A',
-    subtitle: 'A Major',
-    notes: 'A - C# - E',
-    diagram: ['e|--0--|', 'B|--2--|', 'G|--2--|', 'D|--2--|', 'A|--0--|', 'E|--x--|']
-  },
-  D: {
-    symbol: 'D',
-    subtitle: 'D Major',
-    notes: 'D - F# - A',
-    diagram: ['e|--2--|', 'B|--3--|', 'G|--2--|', 'D|--0--|', 'A|--x--|', 'E|--x--|']
-  }
-}
+const KEYS: KeyName[] = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const MODES: ModeName[] = [
+  'Ionian',
+  'Dorian',
+  'Phrygian',
+  'Lydian',
+  'Mixolydian',
+  'Aeolian',
+  'Locrian'
+]
+const MINOR_SCALES: ModeName[] = ['Natural minor', 'Harmonic minor', 'Melodic minor']
+const ALTERED_SCALES: ModeName[] = ['Altered scale']
 
 export const useChordStore = defineStore('chords', () => {
-  const selectedKey = ref<KeyName>('E')
+  const selectedKey = ref<KeyName>('C')
+  const selectedMode = ref<ModeName>('Ionian')
 
-  const keys = computed<KeyName[]>(() => ['E', 'G', 'A', 'D'])
-  const currentChord = computed(() => CHORDS[selectedKey.value])
+  const keys = computed<KeyName[]>(() => KEYS)
+  const modes = computed<ModeName[]>(() => MODES)
+  const minorScales = computed<ModeName[]>(() => MINOR_SCALES)
+  const alteredScales = computed<ModeName[]>(() => ALTERED_SCALES)
 
   function setKey(key: KeyName): void {
     selectedKey.value = key
   }
 
+  function setMode(mode: ModeName): void {
+    selectedMode.value = mode
+  }
+
   return {
     selectedKey,
+    selectedMode,
     keys,
-    currentChord,
-    setKey
+    modes,
+    minorScales,
+    alteredScales,
+    setKey,
+    setMode
   }
 })
