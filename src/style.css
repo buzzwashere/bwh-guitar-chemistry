@@ -57,7 +57,7 @@ body {
 
 .app-main {
   flex: 1;
-  width: min(1080px, 100%);
+  width: min(100%, calc((100vw + 1080px) / 2));
   margin: 0 auto;
 }
 
@@ -92,6 +92,15 @@ body {
   font-size: 0.9rem;
   line-height: 1.5;
   min-height: 1.5em;
+}
+
+.step-pattern {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  min-height: 1.5em;
+  /* font-weight: 400; */
+  /* letter-spacing: 0.04em; */
 }
 
 .key-row-sep {
@@ -137,6 +146,37 @@ body {
 .fretboard {
   overflow-x: auto;
   padding-bottom: 4px;
+}
+
+.fretboard-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 780px;
+}
+
+.string-labels {
+  display: flex;
+  flex-direction: column;
+  height: 130px;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.string-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 14px;
+  padding-right: 2px;
+}
+
+.fretboard-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .fretboard-neck {
@@ -218,12 +258,26 @@ body {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #2b7be0;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55), 0 1px 3px rgba(0, 0, 0, 0.5);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.note-dot.highlighted {
+  background: #ffd60a;
+  color: #000;
+  font-weight: 900;
 }
 
 .fret-labels {

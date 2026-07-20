@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useChordStore } from '../stores/chords'
 
@@ -49,6 +49,20 @@ const MODE_INTERVALS: Record<string, number[]> = {
   'Altered scale':   [0, 1, 3, 4, 6, 8, 10]
 }
 
+const MODE_DEGREES: Record<string, string[]> = {
+  Ionian:            ['1', '2', '3', '4', '5', '6', '7'],
+  Dorian:            ['1', '2', '♭3', '4', '5', '6', '♭7'],
+  Phrygian:          ['1', '♭2', '♭3', '4', '5', '♭6', '♭7'],
+  Lydian:            ['1', '2', '3', '♯4', '5', '6', '7'],
+  Mixolydian:        ['1', '2', '3', '4', '5', '6', '♭7'],
+  Aeolian:           ['1', '2', '♭3', '4', '5', '♭6', '♭7'],
+  Locrian:           ['1', '♭2', '♭3', '4', '♭5', '♭6', '♭7'],
+  'Natural minor':   ['1', '2', '♭3', '4', '5', '♭6', '♭7'],
+  'Harmonic minor':  ['1', '2', '♭3', '4', '5', '♭6', '7'],
+  'Melodic minor':   ['1', '2', '♭3', '4', '5', '6', '7'],
+  'Altered scale':   ['1', '♭2', '♭3', '♭4', '♭5', '♭6', '♭7']
+}
+
 // Standard tuning, top-of-diagram to bottom: high e, B, G, D, A, low E
 const STRING_OPEN_SEMITONES = [4, 11, 7, 2, 9, 4]
 // Vertical center of each string as % of neck height (6 equal lanes)
@@ -56,20 +70,69 @@ const STRING_TOPS = [8.33, 25, 41.67, 58.33, 75, 91.67]
 
 const currentDescription = computed(() => MODE_DESCRIPTIONS[selectedMode.value] ?? '')
 
-const scaleSet = computed(() => {
-  const root = SEMITONE[selectedKey.value]
+const stepPattern = computed(() => {
   const intervals = MODE_INTERVALS[selectedMode.value]
-  return new Set(intervals.map(i => (root + i) % 12))
+  if (!intervals) return ''
+  const steps: string[] = []
+  for (let i = 1; i < intervals.length; i++) {
+    steps.push(stepLabel(intervals[i] - intervals[i - 1]))
+  }
+  steps.push(stepLabel(12 - intervals[intervals.length - 1]))
+  return steps.join(' - ')
 })
 
-type NoteDot = { string: number; top: number }
+function stepLabel(semitones: number): string {
+  if (semitones === 1) return 'H'
+  if (semitones === 2) return 'W'
+  if (semitones === 3) return 'W+H'
+  return `${semitones}`
+}
+
+const scaleMap = computed(() => {
+  const root = SEMITONE[selectedKey.value]
+  const intervals = MODE_INTERVALS[selectedMode.value]
+  const degrees = MODE_DEGREES[selectedMode.value]
+  const map = new Map<number, string>()
+  intervals.forEach((i, idx) => map.set((root + i) % 12, degrees[idx]))
+  return map
+})
+
+type Voicing = 'Triads' | 'Quartals' | 'Fifths'
+const VOICING_DEGREES: Record<Voicing, number[]> = {
+  Triads:   [1, 3, 5, 7],
+  Quartals: [1, 4, 7],
+  Fifths:   [1, 5, 2] // 9 == 2 within a single-octave scale
+}
+const voicings: Voicing[] = ['Triads', 'Quartals', 'Fifths']
+const selectedVoicing = ref<Voicing | null>(null)
+
+function toggleVoicing(v: Voicing) {
+  selectedVoicing.value = selectedVoicing.value === v ? null : v
+}
+
+const highlightedDegrees = computed<Set<number>>(() => {
+  const v = selectedVoicing.value
+  return v ? new Set(VOICING_DEGREES[v]) : new Set()
+})
+
+function baseDegree(label: string): number {
+  return parseInt(label.replace(/[♭♯]/g, ''), 10)
+}
+
+type NoteDot = { string: number; top: number; label: string; highlighted: boolean }
 
 function dotsAtFret(fret: number): NoteDot[] {
   const result: NoteDot[] = []
   for (let i = 0; i < STRING_OPEN_SEMITONES.length; i++) {
     const note = (STRING_OPEN_SEMITONES[i] + fret) % 12
-    if (scaleSet.value.has(note)) {
-      result.push({ string: i, top: STRING_TOPS[i] })
+    const label = scaleMap.value.get(note)
+    if (label !== undefined) {
+      result.push({
+        string: i,
+        top: STRING_TOPS[i],
+        label,
+        highlighted: highlightedDegrees.value.has(baseDegree(label))
+      })
     }
   }
   return result
@@ -135,42 +198,65 @@ function dotsAtFret(fret: number): NoteDot[] {
         </button>
       </div>
       <p class="mode-description mt-3 mb-0">{{ currentDescription }}</p>
+      <p class="step-pattern mt-2 mb-0">Step Pattern: &nbsp;{{ stepPattern }}</p>
     </div>
 
     <div class="panel p-3 p-md-4">
-      <h2 class="panel-title">Fretboard</h2>
+      <h2 class="panel-title">Fretboard - {{ selectedKey }} {{ selectedMode }}</h2>
       <div class="fretboard mt-3">
-        <div class="fretboard-neck">
-          <div class="nut">
-            <span
-              v-for="dot in dotsAtFret(0)"
-              :key="dot.string"
-              class="note-dot"
-              :style="{ top: `${dot.top}%` }"
-            ></span>
+        <div class="fretboard-inner">
+          <div class="string-labels" aria-hidden="true">
+            <div v-for="s in STRING_COUNT" :key="s" class="string-label">{{ s }}</div>
           </div>
-          <div v-for="n in FRET_COUNT" :key="n" class="fret">
-            <span v-if="SINGLE_MARKER_FRETS.includes(n)" class="marker"></span>
-            <template v-if="n === 12">
-              <span class="marker marker-top"></span>
-              <span class="marker marker-bottom"></span>
-            </template>
-            <span
-              v-for="dot in dotsAtFret(n)"
-              :key="dot.string"
-              class="note-dot"
-              :style="{ top: `${dot.top}%` }"
-            ></span>
-          </div>
-          <div class="strings">
-            <div v-for="s in STRING_COUNT" :key="s" class="string-lane">
-              <div class="string" :class="`string-${s}`"></div>
+          <div class="fretboard-main">
+            <div class="fretboard-neck">
+              <div class="nut">
+                <span
+                  v-for="dot in dotsAtFret(0)"
+                  :key="dot.string"
+                  class="note-dot"
+                  :class="{ highlighted: dot.highlighted }"
+                  :style="{ top: `${dot.top}%` }"
+                >{{ dot.label }}</span>
+              </div>
+              <div v-for="n in FRET_COUNT" :key="n" class="fret">
+                <span v-if="SINGLE_MARKER_FRETS.includes(n)" class="marker"></span>
+                <template v-if="n === 12">
+                  <span class="marker marker-top"></span>
+                  <span class="marker marker-bottom"></span>
+                </template>
+                <span
+                  v-for="dot in dotsAtFret(n)"
+                  :key="dot.string"
+                  class="note-dot"
+                  :class="{ highlighted: dot.highlighted }"
+                  :style="{ top: `${dot.top}%` }"
+                >{{ dot.label }}</span>
+              </div>
+              <div class="strings">
+                <div v-for="s in STRING_COUNT" :key="s" class="string-lane">
+                  <div class="string" :class="`string-${s}`"></div>
+                </div>
+              </div>
+            </div>
+            <div class="fret-labels">
+              <div class="nut-spacer"></div>
+              <div v-for="n in FRET_COUNT" :key="n" class="fret-label">{{ n }}</div>
             </div>
           </div>
         </div>
-        <div class="fret-labels">
-          <div class="nut-spacer"></div>
-          <div v-for="n in FRET_COUNT" :key="n" class="fret-label">{{ n }}</div>
+        <div class="key-row mt-3">
+          <button
+            v-for="v in voicings"
+            :key="v"
+            type="button"
+            class="key-btn"
+            :class="{ active: selectedVoicing === v }"
+            :aria-pressed="selectedVoicing === v"
+            @click="toggleVoicing(v)"
+          >
+            {{ v }}
+          </button>
         </div>
       </div>
     </div>
